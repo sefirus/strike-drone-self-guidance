@@ -1,0 +1,16 @@
+# Default MAVLink connection string (can be overridden via CLI)
+connection: "udp:127.0.0.1:14550"
+
+# Blackbox log file path
+blackbox_log_file: "blackbox.log"
+
+# Telemetry listener frequency (in Hz)
+telemetry_frequency: 10
+
+# Default MAVLink baud rate
+mavlink_baud: 57600
+
+# Logging level for the system
+log_level: "INFO"
+
+# Add new configuration parameters here as needed.

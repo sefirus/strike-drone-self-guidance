@@ -1,0 +1,22 @@
+import logging
+
+class BlackboxLogger:
+    """
+    Writes MAVLink telemetry messages to a dedicated log file for post-flight analysis.
+    """
+    def __init__(self, log_file_path="blackbox.log"):
+        self.log_file_path = log_file_path
+        self.logger = logging.getLogger("BlackboxLogger")
+        self.logger.setLevel(logging.INFO)
+        # Create file handler only once.
+        if not self.logger.handlers:
+            handler = logging.FileHandler(self.log_file_path)
+            formatter = logging.Formatter('%(asctime)s %(message)s')
+            handler.setFormatter(formatter)
+            self.logger.addHandler(handler)
+
+    def log_message(self, msg: dict):
+        """
+        Logs a MAVLink message (as a dict) to the blackbox file.
+        """
+        self.logger.info(msg)
