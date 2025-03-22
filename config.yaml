@@ -13,4 +13,6 @@ mavlink_baud: 57600
 # Logging level for the system
 log_level: "INFO"
 
-# Add new configuration parameters here as needed.
+# Camera configuration parameters
+camera_source: "sim"       # Options: "sim", "real"
+show_camera_window: true

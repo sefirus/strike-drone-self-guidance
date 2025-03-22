@@ -16,8 +16,8 @@ def main():
     args = parse_cli_args()
 
     # Load configuration (all default values and parameters are in config.py)
-    config = load_config(args.config)
-
+    # config = load_config(args.config)
+    config = load_config('/home/sefirus/uavs/strike-drone-self-guidance/config.yaml')
     # Configure logging using configuration parameters.
     logging.basicConfig(
         level=getattr(logging, config.LOG_LEVEL.upper(), logging.INFO),
