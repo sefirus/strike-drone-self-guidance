@@ -25,10 +25,11 @@ class FlightControlThread(threading.Thread):
             self.camera_getter = RealCameraGetter(self.config)
             self.target_selector = RealTargetSelector()
 
-        self.tracker = TargetTracker()
+        self.tracker = TargetTracker(self.config)
 
     def run(self):
         logging.info("Flight Control Thread started.")
+        tracker_started = False
 
         # Start the camera feed
         self.camera_getter.start()
@@ -44,18 +45,26 @@ class FlightControlThread(threading.Thread):
 
             # Process the frame
             bbox = self.target_selector.get_target_bbox(frame)
-
-            # Pass to tracker (placeholder)
-            tracked_target = self.tracker.track(frame, bbox)
-
-            # Show the camera window if enabled
-            if self.config.SHOW_CAMERA_WINDOW:
-                display_frame = frame.copy()
-                if bbox:
-                    x, y, w, h = bbox
-                    cv2.rectangle(display_frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
-                cv2.imshow("Simulated Camera", display_frame)
-                cv2.waitKey(1)
+            if bbox is None:
+                continue
+            # # Pass to tracker (placeholder)
+            # tracked_target = self.tracker.track(frame, bbox)
+            # Suppose initial_bbox is (x, y, w, h) from the target selector (e.g., 160x160 pixels)
+            if not tracker_started:
+                self.tracker.start_tracking(frame, bbox)
+                tracker_started = True
+            else:
+                bbox = self.tracker.track(frame)
+                # In simulation mode, draw the bounding box with a red rectangle (1px thickness)
+                if self.config.CAMERA_SOURCE == "sim" and bbox is not None:
+                    display_frame = frame.copy()
+                    x, y, w, h = map(int, bbox)
+                    cv2.rectangle(display_frame, (x, y), (x + w, y + h), (0, 0, 255), 1)
+                    if bbox:
+                        x, y, w, h = bbox
+                        cv2.rectangle(display_frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                    cv2.imshow("Simulated Camera", display_frame)
+                    cv2.waitKey(1)
 
             # Ensure loop runs at a reasonable rate
             self.shutdown_event.wait(0.05)
