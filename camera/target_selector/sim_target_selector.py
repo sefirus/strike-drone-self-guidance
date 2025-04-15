@@ -1,5 +1,5 @@
-import cv2
 import logging
+import cv2
 
 from camera.target_selector.base_target_selector import BaseTargetSelector
 

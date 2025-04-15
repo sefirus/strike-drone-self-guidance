@@ -63,7 +63,7 @@ class SimCameraGetter(BaseCameraGetter):
         # rclpy.shutdown() is called from inside the thread after spin ends.
         # If you want a clean shutdown, you can wait for the spin thread to exit:
         if self.spin_thread and self.spin_thread.is_alive():
-            # This will force spin() to exit by shutting down rclpy (or just let the node be destroyed).
+            # This will force spin() to exit by shutting down rclpy.
             rclpy.shutdown()
             self.spin_thread.join()
         cv2.destroyAllWindows()
@@ -93,7 +93,6 @@ class SimCameraSubscriber(Node):
         self.frame_count = 0
 
     def image_callback(self, msg):
-        # Convert ROS image to CV image
         try:
             cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
         except Exception as e:
