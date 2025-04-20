@@ -8,12 +8,17 @@ class BlackboxLogger:
         self.log_file_path = log_file_path
         self.logger = logging.getLogger("BlackboxLogger")
         self.logger.setLevel(logging.INFO)
-        # Create file handler only once.
-        if not self.logger.handlers:
-            handler = logging.FileHandler(self.log_file_path)
-            formatter = logging.Formatter('%(asctime)s %(message)s')
-            handler.setFormatter(formatter)
-            self.logger.addHandler(handler)
+        self.logger.propagate = False  # Prevent log messages from propagating to the root logger
+
+        # Remove any existing handlers
+        for handler in self.logger.handlers[:]:
+            self.logger.removeHandler(handler)
+
+        # Set up file handler only
+        file_handler = logging.FileHandler(self.log_file_path)
+        formatter = logging.Formatter('%(asctime)s %(message)s')
+        file_handler.setFormatter(formatter)
+        self.logger.addHandler(file_handler)
 
     def log_message(self, msg: dict):
         """

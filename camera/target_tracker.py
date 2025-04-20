@@ -44,13 +44,11 @@ class TargetTracker:
             frame = self.latest_frame.copy() if self.latest_frame is not None else None
 
         new_bbox = self.yolo_detector.detect(frame, bbox)
-        # logging.error("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX   Tracked")
 
         if new_bbox:
             with self.lock:
                 self.current_bbox = new_bbox
                 self.latest_frame = frame.copy()
-                # self.tracker = cv2.TrackerCSRT_create()
                 self.tracker.init(frame, new_bbox)
 
 

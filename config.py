@@ -11,7 +11,7 @@ class Config:
     def __init__(self, config_dict: dict):
         self.CONNECTION = config_dict.get("connection", "udp:127.0.0.1:14550")
         self.BLACKBOX_LOG_FILE = config_dict.get("blackbox_log_file", "blackbox.log")
-        self.TELEMETRY_FREQUENCY = config_dict.get("telemetry_frequency", 10)  # in Hz
+        self.TELEMETRY_FREQUENCY = config_dict.get("telemetry_frequency", 200)  # in Hz
         self.MAVLINK_BAUD = config_dict.get("mavlink_baud", 57600)
         self.LOG_LEVEL = config_dict.get("log_level", "INFO")
 

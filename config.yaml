@@ -5,7 +5,7 @@ connection: "udp:127.0.0.1:14550"
 blackbox_log_file: "blackbox.log"
 
 # Telemetry listener frequency (in Hz)
-telemetry_frequency: 10
+telemetry_frequency: 200
 
 # Default MAVLink baud rate
 mavlink_baud: 57600
