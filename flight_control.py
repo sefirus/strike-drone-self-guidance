@@ -3,6 +3,7 @@ import logging
 import cv2
 
 from mavlink_command_sender import MavlinkCommandSender
+from sensors.hardware_sensor_provider import HardwareSensorProvider
 from sensors.sim_sensor_provider import SimSensorProvider
 from camera.target_selector.sim_target_selector import SimTargetSelector
 from camera.target_selector.rc_target_selector import RealTargetSelector
@@ -21,8 +22,12 @@ class FlightControlThread(threading.Thread):
         self.config = config
 
         # Unified sensor provider for both camera and IMU
-        self.sensor_provider = SimSensorProvider(config)
-
+        if config.CAMERA_SOURCE.lower() == "sim":
+            self.sensor_provider = SimSensorProvider(config)
+            self.target_selector = SimTargetSelector(config)
+        else:
+            self.sensor_provider = HardwareSensorProvider(config)
+            self.target_selector = RealTargetSelector()
         # Target selection based on simulation or real
         self.target_selector = (
             SimTargetSelector(config) if config.CAMERA_SOURCE == "sim" else RealTargetSelector()
