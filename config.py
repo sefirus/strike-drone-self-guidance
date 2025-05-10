@@ -47,6 +47,11 @@ class Config:
         self.CAMERA_V_FOV = config_dict.get("CAMERA_V_FOV", 60)
         self.LOS_KOEF = config_dict.get("LOS_KOEF", 1.4)
 
+        self.BORDER_FRAC = config_dict.get("BORDER_FRAC", 0.80)
+        self.GAIN_XY = config_dict.get("GAIN_XY", 0.40)
+        self.GAIN_Z = config_dict.get("GAIN_Z", 0.60)
+        self.ACCEL_GAIN = config_dict.get("ACCEL_GAIN", 0.15)
+
 
     def __repr__(self):
         """String representation for debugging."""

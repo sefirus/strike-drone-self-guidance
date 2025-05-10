@@ -32,12 +32,17 @@ ACC_WINDOW_SIZE: 4
 ACC_EMA_ALPHA: 0.7
 
 # attitude-ramp parameters
-INITIAL_TILT_DEG: 70      # ≤ this much the very first frame
+INITIAL_TILT_DEG: 40      # ≤ this much the very first frame
 TILT_RAMP_RATE_DEG_S: 30      # grow by N deg per second
 MAX_TILT_DEG: 70      # hard ceiling (was max_tilt_angle_deg)
 GRAV_KOEF: 0.1
 LOS_KOEF: 1.4
 MAG_OFFSET_YAW_RAD: 2.9520
+
+BORDER_FRAC: 0.70        # start helping when |offset| > 0.80 · half-size
+GAIN_XY: 0.40        # roll / pitch authority
+GAIN_Z: 0.60        # restore lost lift while tilting
+ACCEL_GAIN: 0.15        # anticipatory bias from angular accel
 
 
 #
