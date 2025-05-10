@@ -2,19 +2,22 @@ import threading
 import time
 import logging
 import rclpy
+import sensor_msgs
 from rclpy.node import Node
 from cv_bridge import CvBridge
+from sensors.interfaces.MagProvider import MagProvider
 from sensors.interfaces.camera_provider import CameraProvider
 from sensors.interfaces.imu_provider import IMUProvider
-from sensors.data_structures import CameraFrame, IMUData
+from sensors.data_structures import CameraFrame, IMUData, MagData
 from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy
-from sensor_msgs.msg import Image, Imu
+from sensor_msgs.msg import Image, Imu, MagneticField
 
-class SimSensorProvider(CameraProvider, IMUProvider):
+class SimSensorProvider(CameraProvider, IMUProvider, MagProvider):
     def __init__(self, config):
         self.config = config
         self.latest_frame = None
         self.latest_imu = None
+        self.latest_mag = None
         self.node = None
         self.initialized = False
         self.spin_thread = None
@@ -69,15 +72,18 @@ class SimSensorProvider(CameraProvider, IMUProvider):
     def get_latest_camera_frame(self) -> CameraFrame:
         return self.latest_frame
 
-    def get_latest_imu_data(self) -> IMUData:
+    def get_latest_imu_data(self):
         return self.latest_imu
+
+    def get_latest_mag_data(self):
+        return self.latest_mag
 
 
 class SimSensorSubscriber(Node):
     def __init__(self, node_name, camera_getter):
         super().__init__(node_name)
         self.bridge = CvBridge()
-        self.camera_getter = camera_getter
+        self.sensor_getter = camera_getter
 
         qos = QoSProfile(
             depth=1,
@@ -97,29 +103,38 @@ class SimSensorSubscriber(Node):
             qos
         )
 
+        self.create_subscription(
+            MagneticField,
+            'magnetometer',
+            self.magnetometer_callback,
+            qos
+        )
+
         self.get_logger().info("SimCameraSubscriber started.")  # common start log
         self.last_time = time.time()
         self.frame_count = 0
 
-    def image_callback(self, msg):
+    def image_callback(self, msg : Image):
         try:
             cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
         except Exception as e:
             self.get_logger().error(f"Image conversion failed: {e}")
             return
-        self.camera_getter.latest_frame = cv_image
+        self.sensor_getter.latest_frame = CameraFrame(cv_image, time.time())
         self._log_fps(cv_image.shape[1], cv_image.shape[0])
 
-    def imu_callback(self, msg):
+    def imu_callback(self, msg: Imu):
         """New IMU callback to store and log readings."""
-        self.camera_getter.latest_imu = msg
-        la = msg.linear_acceleration
-        av = msg.angular_velocity
+        orientation = (msg.orientation.x, msg.orientation.y, msg.orientation.z, msg.orientation.w)
+        linear_acceleration = (msg.linear_acceleration.x, msg.linear_acceleration.y, msg.linear_acceleration.z)
+        angular_velocity = (msg.angular_velocity.x, msg.angular_velocity.y, msg.angular_velocity.z)
+        self.sensor_getter.latest_imu = IMUData(orientation, linear_acceleration, angular_velocity, time.time())
 
-        logging.info(
-            f"IMU Accel: x={la.x:.3f}, y={la.y:.3f}, z={la.z:.3f}; "
-            f"AngVel: x={av.x:.3f}, y={av.y:.3f}, z={av.z:.3f}"
-        )
+
+    def magnetometer_callback(self, msg: MagneticField):
+        mag_data = MagData(msg.magnetic_field.x, msg.magnetic_field.y, msg.magnetic_field.z)
+        self.sensor_getter.latest_mag = mag_data
+
 
     def _log_fps(self, width, height):
         current_time = time.time()

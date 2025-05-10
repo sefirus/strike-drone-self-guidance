@@ -16,3 +16,35 @@ log_level: "INFO"
 # Camera configuration parameters
 camera_source: "sim"       # Options: "sim", "real"
 show_camera_window: true
+
+# Proportional Navigation
+nav_constant: 4.0          # Typical N value (3–5)
+gravity: 9.80665           # m/s², for thrust/gravity compensation
+
+camera_h_fov: 120.0
+camera_v_fov: 105.0
+
+guidance_mode: "los"   # "los" or "pn"
+los_gain: 3.0
+
+ACC_SMOOTH_METHOD: "ema"
+ACC_WINDOW_SIZE: 4
+ACC_EMA_ALPHA: 0.7
+
+# attitude-ramp parameters
+INITIAL_TILT_DEG: 70      # ≤ this much the very first frame
+TILT_RAMP_RATE_DEG_S: 30      # grow by N deg per second
+MAX_TILT_DEG: 70      # hard ceiling (was max_tilt_angle_deg)
+GRAV_KOEF: 0.1
+LOS_KOEF: 1.4
+MAG_OFFSET_YAW_RAD: 2.9520
+
+
+#
+## MAX_TILT_DEG: = 45      # hard mechanical limit
+#H_GUARD_M: 3.0     # tilt fade-out height band
+#SINK_RATE_LIMIT_MS: 1.0     # m/s allowed before extra tightening
+#GRAVITY: 9.81
+#ALT_P: 0.12    # altitude proportional gain
+#ALT_D: 0.05    # altitude derivative gain
+#REL_ALT_MAX: 10.0    # clamp to bound drift

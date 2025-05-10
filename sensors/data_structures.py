@@ -12,3 +12,9 @@ class IMUData:
     linear_acceleration: tuple
     angular_velocity: tuple
     timestamp: float
+
+@dataclass
+class MagData:
+    x: float
+    y: float
+    z: float

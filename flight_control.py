@@ -2,10 +2,13 @@ import threading
 import logging
 import cv2
 
+from mavlink_command_sender import MavlinkCommandSender
 from sensors.sim_sensor_provider import SimSensorProvider
 from camera.target_selector.sim_target_selector import SimTargetSelector
 from camera.target_selector.rc_target_selector import RealTargetSelector
 from camera.target_tracker import TargetTracker
+from trajectory_planning.trajectory_planning import TrajectoryPlanner
+
 
 class FlightControlThread(threading.Thread):
     def __init__(self, mav_conn, connection_lock, shutdown_event, config):
@@ -13,6 +16,8 @@ class FlightControlThread(threading.Thread):
         self.mav_conn = mav_conn
         self.connection_lock = connection_lock
         self.shutdown_event = shutdown_event
+        self.planner = TrajectoryPlanner(config)
+        self.command_sender = MavlinkCommandSender(mav_conn, connection_lock)
         self.config = config
 
         # Unified sensor provider for both camera and IMU
@@ -40,7 +45,7 @@ class FlightControlThread(threading.Thread):
 
             # Optional window display
             if self.config.SHOW_CAMERA_WINDOW:
-                cv2.imshow("Camera Feed", frame)
+                cv2.imshow("Simulated Camera", frame)
                 cv2.waitKey(1)
 
             # Target acquisition
@@ -56,10 +61,18 @@ class FlightControlThread(threading.Thread):
                 if self.config.CAMERA_SOURCE == "sim" and bbox:
                     x, y, w, h = map(int, bbox)
                     cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 1)
-                    cv2.imshow("Camera Feed", frame)
+                    cv2.imshow("Simulated Camera", frame)
                     cv2.waitKey(1)
 
-            self.shutdown_event.wait(0.05)
+            if tracker_started:
+                imu = self.sensor_provider.get_latest_imu_data()
+                mag = self.sensor_provider.get_latest_mag_data()
+                cmd_quat, throttle = self.planner.compute_command(bbox, camera_frame, imu, mag)
+                # Send the command:
+                logging.info(f"Sent attitude command: {cmd_quat}, throttle: {throttle:.2f}")
+                self.command_sender.send_attitude_target(cmd_quat, throttle)
+
+            self.shutdown_event.wait(0.01)
 
         self.sensor_provider.stop()
         cv2.destroyAllWindows()

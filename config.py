@@ -18,6 +18,35 @@ class Config:
         # Camera parameters
         self.CAMERA_SOURCE = config_dict.get("camera_source", "sim")  # Options: "sim", "real"
         self.SHOW_CAMERA_WINDOW = config_dict.get("show_camera_window", True)  # Default: True
+        # In Config.__init__
+        self.NAV_CONSTANT = config_dict.get("nav_constant", 3.0)
+        self.GRAVITY = config_dict.get("gravity", 9.80665)
+        self.CAMERA_H_FOV = config_dict.get("camera_h_fov", 120.0)
+        self.CAMERA_V_FOV = config_dict.get("camera_v_fov", 105.0)
+        self.max_tilt_angle_deg = config_dict.get("max_tilt_angle_deg", 60.0)
+        self.GUIDANCE_MODE = config_dict.get("guidance_mode", "los").lower()
+        self.LOS_GAIN = config_dict.get("los_gain", 3.0)
+        self.ACC_SMOOTH_METHOD = config_dict.get("ACC_SMOOTH_METHOD", "window")
+        self.ACC_WINDOW_SIZE = config_dict.get("ACC_WINDOW_SIZE", 4)
+        self.ACC_EMA_ALPHA = config_dict.get("ACC_EMA_ALPHA", 0.7)
+        self.INITIAL_TILT_DEG = config_dict.get("INITIAL_TILT_DEG", 10)
+        self.TILT_RAMP_RATE_DEG_S = config_dict.get("TILT_RAMP_RATE_DEG_S", 20)
+        self.MAX_TILT_DEG = config_dict.get("MAX_TILT_DEG", 60)
+        self.GRAV_KOEF = config_dict.get("GRAV_KOEF", 0.1)
+        self.MAG_OFFSET_YAW_RAD = config_dict.get("MAG_OFFSET_YAW_RAD", 2.9520)
+
+        self.H_GUARD_M = config_dict.get("H_GUARD_M", 3.0)
+        self.SINK_RATE_LIMIT_MS = config_dict.get("SINK_RATE_LIMIT_MS", 1.0)
+        self.GRAVITY = config_dict.get("GRAVITY", 9.81)
+        self.RAV_KOEF = config_dict.get("RAV_KOEF", 1.0)
+        self.HOVER_THROTTLE = config_dict.get("HOVER_THROTTLE", 0.55)
+        self.ALT_P = config_dict.get("ALT_P", 0.12)
+        self.ALT_D = config_dict.get("ALT_D", 0.05)
+        self.REL_ALT_MAX = config_dict.get("REL_ALT_MAX", 10.0)
+        self.CAMERA_H_FOV = config_dict.get("CAMERA_H_FOV", 78)
+        self.CAMERA_V_FOV = config_dict.get("CAMERA_V_FOV", 60)
+        self.LOS_KOEF = config_dict.get("LOS_KOEF", 1.4)
+
 
     def __repr__(self):
         """String representation for debugging."""

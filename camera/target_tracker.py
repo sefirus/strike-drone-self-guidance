@@ -9,18 +9,19 @@ from camera.yolo_detector import YOLODetector
 class TargetTracker:
     """
     Implements target tracking using a CSRT tracker.
-    Runs YOLO detection asynchronously once on the initial region and reinitializes the tracker if detection is found.
+    Runs YOLO detection asynchronously when (and only when) the CSRT tracker loses the target,
+    and returns the last known bbox until YOLO finishes.
     """
 
     def __init__(self, config):
         self.config = config
         self.tracker = None
         self.current_bbox = None
-        self.latest_frame = None
-
         self.lock = threading.Lock()
+
+        # Async-YOLO state
         self.yolo_thread = None
-        self.yolo_done = False
+        self.yolo_running = False
 
         model_path = os.path.join(os.path.dirname(__file__), "models", "best.pt")
         self.yolo_detector = YOLODetector(model_path)
@@ -32,44 +33,60 @@ class TargetTracker:
 
         with self.lock:
             self.current_bbox = initial_bbox
-            self.latest_frame = initial_frame.copy()
 
-        # Start YOLO detection asynchronously
-        self.yolo_thread = threading.Thread(target=self._run_yolo_async, daemon=True)
-        self.yolo_thread.start()
-
-    def _run_yolo_async(self):
-        with self.lock:
-            bbox = self.current_bbox
-            frame = self.latest_frame.copy() if self.latest_frame is not None else None
-
-        new_bbox = self.yolo_detector.detect(frame, bbox)
-
-        if new_bbox:
-            with self.lock:
-                self.current_bbox = new_bbox
-                self.latest_frame = frame.copy()
-                self.tracker.init(frame, new_bbox)
-
-
-            logging.info("TargetTracker: Tracker reinitialized with new YOLO bbox.")
-        else:
-            logging.info("TargetTracker: YOLO did not find a better bbox.")
-
-        self.yolo_done = True
+    def _run_yolo_async(self, frame, last_bbox):
+        """Worker thread: run YOLO once, then reinit CSRT if found."""
+        try:
+            new_bbox = self.yolo_detector.detect(frame, last_bbox)
+            if new_bbox:
+                logging.info("TargetTracker: YOLO reacquired target, reinitializing CSRT.")
+                with self.lock:
+                    self.current_bbox = new_bbox
+                # reinit CSRT on the new box
+                tracker = cv2.TrackerCSRT_create()
+                tracker.init(frame, new_bbox)
+                with self.lock:
+                    self.tracker = tracker
+            else:
+                logging.info("TargetTracker: YOLO failed to find target.")
+        finally:
+            # always clear the running flag
+            self.yolo_running = False
 
     def track(self, frame, fallback_bbox=None):
-        success, bbox = self.tracker.update(frame)
-        with self.lock:
-            self.latest_frame = frame.copy()
+        """
+        Call every frame. If CSRT loses the target, spawn a YOLO thread exactly once,
+        and meanwhile return the last known bbox.
+        """
+        try:
+            success, bbox = self.tracker.update(frame)
+            if success and bbox is not None:
+                with self.lock:
+                    self.current_bbox = bbox
+                return bbox
 
-        if success:
-            with self.lock:
-                self.current_bbox = bbox
-            return bbox
+            # lost the target
+            logging.warning("TargetTracker: CSRT lost target.")
+            # if YOLO isn't already running, start it
+            if not self.yolo_running:
+                with self.lock:
+                    last = self.current_bbox
+                self.yolo_running = True
+                # pass frame copy and last bbox
+                thread = threading.Thread(
+                    target=self._run_yolo_async,
+                    args=(frame.copy(), last),
+                    daemon=True
+                )
+                thread.start()
+                self.yolo_thread = thread
 
-        logging.warning("TargetTracker: CSRT tracker lost target.")
-        return fallback_bbox
+            # while YOLO is running (or if it later fails), return last known
+            return fallback_bbox or self.current_bbox
+
+        except Exception as e:
+            logging.exception("TargetTracker: Exception during track()")
+            return fallback_bbox or self.current_bbox
 
     def stop(self):
         if self.yolo_thread is not None:
