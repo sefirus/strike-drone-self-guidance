@@ -2,6 +2,7 @@ import threading
 import logging
 import cv2
 
+from crash_detector import CrashDetector
 from mavlink_command_sender import MavlinkCommandSender
 from sensors.hardware_sensor_provider import HardwareSensorProvider
 from sensors.sim_sensor_provider import SimSensorProvider
@@ -20,6 +21,9 @@ class FlightControlThread(threading.Thread):
         self.planner = TrajectoryPlanner(config)
         self.command_sender = MavlinkCommandSender(mav_conn, connection_lock)
         self.config = config
+        self.crash_detector = CrashDetector(config)
+        self.crashed = False
+
 
         # Unified sensor provider for both camera and IMU
         if config.CAMERA_SOURCE.lower() == "sim":
@@ -53,6 +57,25 @@ class FlightControlThread(threading.Thread):
                 cv2.imshow("Simulated Camera", frame)
                 cv2.waitKey(1)
 
+            imu = self.sensor_provider.get_latest_imu_data()
+
+            if imu and self.crash_detector.update(imu):
+                if not self.crashed:
+                    self.crashed = True
+                    logging.error("!!! CRASH DETECTED – ACTIVATION !!!")
+                    # Red screen in sim
+                    if self.config.CAMERA_SOURCE == "sim":
+                        red = frame.copy() * 0
+                        red[:] = (0, 0, 255)
+                        cv2.imshow("Simulated Camera", red)
+                        cv2.waitKey(1)
+                        self.shutdown_event.wait()
+                    # Stop tracking / further commands
+                    self.tracker.stop()
+                # Skip remainder of loop (no commands)
+                self.shutdown_event.wait(0.01)
+                continue
+
             # Target acquisition
             bbox = self.target_selector.get_target_bbox(frame)
             if bbox is None:
@@ -70,7 +93,6 @@ class FlightControlThread(threading.Thread):
                     cv2.waitKey(1)
 
             if tracker_started:
-                imu = self.sensor_provider.get_latest_imu_data()
                 mag = self.sensor_provider.get_latest_mag_data()
                 cmd_quat, throttle = self.planner.compute_command(bbox, camera_frame, imu, mag)
                 # Send the command:

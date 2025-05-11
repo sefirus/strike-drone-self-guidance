@@ -52,6 +52,9 @@ class Config:
         self.GAIN_Z = config_dict.get("GAIN_Z", 0.60)
         self.ACCEL_GAIN = config_dict.get("ACCEL_GAIN", 0.15)
 
+        self.crash_acc_threshold = config_dict.get("crash_acc_threshold", 30.0)  # m/s^2
+        self.crash_gyro_threshold = config_dict.get("crash_gyro_threshold", 5.0)  # rad/s
+        self.crash_impact_window = config_dict.get("crash_impact_window", 0.05)  # seconds
 
     def __repr__(self):
         """String representation for debugging."""

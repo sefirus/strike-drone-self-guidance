@@ -44,6 +44,9 @@ GAIN_XY: 0.40        # roll / pitch authority
 GAIN_Z: 0.60        # restore lost lift while tilting
 ACCEL_GAIN: 0.15        # anticipatory bias from angular accel
 
+crash_acc_threshold:   30.0   # m/s^2
+crash_gyro_threshold:   5.0   # rad/s
+crash_impact_window:   0.05   # seconds
 
 #
 ## MAX_TILT_DEG: = 45      # hard mechanical limit
