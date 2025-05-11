@@ -4,6 +4,7 @@ import cv2
 
 from crash_detector import CrashDetector
 from mavlink_command_sender import MavlinkCommandSender
+from rc_switch_reader import RCSwitchReader
 from sensors.hardware_sensor_provider import HardwareSensorProvider
 from sensors.sim_sensor_provider import SimSensorProvider
 from camera.target_selector.sim_target_selector import SimTargetSelector
@@ -23,6 +24,10 @@ class FlightControlThread(threading.Thread):
         self.config = config
         self.crash_detector = CrashDetector(config)
         self.crashed = False
+        self.rc_reader = RCSwitchReader(mav_conn, shutdown_event)
+        self.rc_reader.start()
+        rc_lambda = lambda: self.rc_reader.latest.get(
+            config.ACT_SW_CH, 1000)
 
 
         # Unified sensor provider for both camera and IMU
@@ -31,11 +36,7 @@ class FlightControlThread(threading.Thread):
             self.target_selector = SimTargetSelector(config)
         else:
             self.sensor_provider = HardwareSensorProvider(config)
-            self.target_selector = RealTargetSelector()
-        # Target selection based on simulation or real
-        self.target_selector = (
-            SimTargetSelector(config) if config.CAMERA_SOURCE == "sim" else RealTargetSelector()
-        )
+            self.target_selector = RealTargetSelector(config, rc_lambda)
 
         self.tracker = TargetTracker(config)
 

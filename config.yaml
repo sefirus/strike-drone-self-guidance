@@ -48,11 +48,9 @@ crash_acc_threshold:   30.0   # m/s^2
 crash_gyro_threshold:   5.0   # rad/s
 crash_impact_window:   0.05   # seconds
 
-#
-## MAX_TILT_DEG: = 45      # hard mechanical limit
-#H_GUARD_M: 3.0     # tilt fade-out height band
-#SINK_RATE_LIMIT_MS: 1.0     # m/s allowed before extra tightening
-#GRAVITY: 9.81
-#ALT_P: 0.12    # altitude proportional gain
-#ALT_D: 0.05    # altitude derivative gain
-#REL_ALT_MAX: 10.0    # clamp to bound drift
+# rc-switch mapping
+tracking_switch_channel: 7      # 1-based RC channel index (e.g. Aux2)
+tracking_switch_threshold: 1500 # μs above which tracking is ON
+activation_switch_channel: 8    # e.g. Aux3
+activation_switch_threshold: 1500
+
